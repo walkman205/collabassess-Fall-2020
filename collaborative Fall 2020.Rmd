@@ -1,0 +1,117 @@
+---
+title: "Collaborative Fall 2020"
+output: html_notebook
+---
+
+```{r include=FALSE}
+library(dplyr)
+library(tidyr)
+```
+
+
+# load survey results
+
+```{r}
+pre_collaborative_survey <- read.csv("data/survey result_collaborative Oct16.csv")
+post_collaborative_survey <- read.csv("data/survey result_collaborative Dec18.csv")
+```
+
+# define item types
+
+```{r}
+positive_questions = c("question5","question6","question8","question11","question14","question15",
+                       "question19","question21","question22","question24","question25","question27",
+                       "question28")
+negative_questions = c("question4","question7","question9","question12","question13","question16",
+                       "question17","question18", "question20","question23","question26")
+
+cost_questions = c("question4","question9","question10","question15","question16","question18",
+                   "question23","question26")
+benefit_questions = c("question5","question6","question7","question8","question9","question11",
+                      "question12","question13","question14","question16","question17","question19",
+                      "question20","question21","question22","question24","question25","question27",
+                      "question28")
+```
+
+# First, we want to rescore the negative items
+
+```{r}
+# function for rescore negative items for collaborative survey
+rescore_negative_collaborative <- function (collaborative_survey){
+  negative <- collaborative_survey[ ,which((names(collaborative_survey) %in% negative_questions)==TRUE | names(collaborative_survey) == "Student")]
+  
+  not_negative <- collaborative_survey[ ,which((names(collaborative_survey) %in% negative_questions)==FALSE | names(collaborative_survey) == "Student")]
+  
+  negative[,-1] <- 6-negative[,-1]
+  collaborative_survey <- merge(not_negative, negative,by="Student",all=T)
+}
+
+rescore_negative_collaborative(pre_collaborative_survey)
+rescore_negative_collaborative(post_collaborative_survey)
+```
+
+```{r}
+# create a new column grading students overall attitude
+pre_collaborative_survey$totalscore <- rowSums(pre_collaborative_survey[,5:29])
+post_collaborative_survey$totalscore <- rowSums(post_collaborative_survey[,5:29])
+
+# get the mean of totalscore of students' attitude about collaboration
+mean(pre_collaborative_survey$totalscore)
+mean(post_collaborative_survey$totalscore)
+```
+
+# I cannot say the above improve is huge, let's look at individual questions
+
+
+```{r}
+# We calculate the difference of the mean of each question
+individual_difference <- colMeans(post_collaborative_survey)-colMeans(pre_collaborative_survey)
+individual_difference_rank <- arrange(as.data.frame(individual_difference),individual_difference)
+
+individual_difference_rank
+# most questions have little bit improves, if we could run it longer, we may have better outcomes
+```
+
+
+# I want to check the correlation between total score and past collaborative experience, not much find
+
+```{r}
+#(pre_collaborative_survey$totalscore,pre_collaborative_survey$question1)
+#cor(pre_collaborative_survey$totalscore,pre_collaborative_survey$question2/3+pre_collaborative_survey$question3/5)
+```
+
+# check which types of items improved the most, cost items or benefit items
+
+```{r}
+pre_cost_items <- pre_collaborative_survey[ ,which((names(pre_collaborative_survey) %in% cost_questions)==TRUE)]
+pre_benefit_items <- pre_collaborative_survey[ ,which((names(pre_collaborative_survey) %in% benefit_questions)==TRUE)]
+
+post_cost_items <- post_collaborative_survey[ ,which((names(post_collaborative_survey) %in% cost_questions)==TRUE)]
+post_benefit_items <- post_collaborative_survey[ ,which((names(post_collaborative_survey) %in% benefit_questions)==TRUE)]
+
+pre_cost_items$totalscore <- rowSums(pre_cost_items)
+pre_benefit_items$totalscore <- rowSums(pre_benefit_items)
+post_cost_items$totalscore <- rowSums(post_cost_items)
+post_benefit_items$totalscore <- rowSums(post_benefit_items)
+mean(pre_cost_items$totalscore)/ncol(pre_cost_items)
+mean(post_cost_items$totalscore)/ncol(post_cost_items)
+mean(pre_benefit_items$totalscore)/ncol(pre_benefit_items)
+mean(post_benefit_items$totalscore)/ncol(post_benefit_items)
+```
+
+# looks like they find collaborative not hard to do.
+
+
+# load test results
+```{r}
+pre_test <- read.csv("data/pre-test Oct16.csv")
+post_test <- read.csv("data/post-test Dec18.csv")
+
+pre_test %>% group_by(version) %>% summarize(mean=mean(as.numeric(total),na.rm=T))
+post_test %>% group_by(version) %>% summarize(mean=mean(as.numeric(total),na.rm=T))
+```
+
+
+
+
+
